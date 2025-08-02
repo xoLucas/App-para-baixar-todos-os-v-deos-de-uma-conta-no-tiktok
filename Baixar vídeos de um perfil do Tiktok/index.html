@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Baixador de Vídeos do TikTok</title>
+    <!-- Link para o Tailwind CSS CDN para estilização -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        /* Define a fonte Inter para todo o corpo do documento */
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f2f5; /* Cor de fundo suave */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh; /* Garante que o corpo ocupe a altura total da viewport */
+            margin: 0;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 flex items-center justify-center min-h-screen">
+    <div class="bg-white p-8 rounded-xl shadow-lg w-full max-w-md text-center">
+        <h1 class="text-3xl font-bold text-gray-800 mb-6">Baixador de Vídeos do TikTok</h1>
+        <p class="text-gray-600 mb-6">
+            Insira o link de um perfil do TikTok para iniciar o download de todos os vídeos.
+        </p>
+
+        <div class="mb-6">
+            <input
+                type="url"
+                id="tiktokLink"
+                placeholder="Ex: https://www.tiktok.com/@nomedousuario"
+                class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-700"
+            >
+        </div>
+
+        <button
+            id="downloadButton"
+            class="w-full bg-blue-600 text-white py-3 px-6 rounded-lg font-semibold hover:bg-blue-700 transition duration-300 ease-in-out shadow-md hover:shadow-lg"
+        >
+            Baixar Vídeos
+        </button>
+
+        <div id="statusMessage" class="mt-6 text-sm text-gray-700 p-3 bg-blue-100 border border-blue-200 rounded-lg hidden">
+            <!-- Mensagens de status serão exibidas aqui -->
+        </div>
+
+        <p class="text-gray-500 text-xs mt-8">
+            *Aviso: Este é apenas o frontend. A funcionalidade de download real requer um serviço de backend.
+        </p>
+    </div>
+
+    <script>
+        // Obtém referências aos elementos HTML
+        const tiktokLinkInput = document.getElementById('tiktokLink');
+        const downloadButton = document.getElementById('downloadButton');
+        const statusMessage = document.getElementById('statusMessage');
+
+        // Define a URL base do seu backend.
+        // Se o seu backend estiver rodando em uma porta diferente ou em outro IP,
+        // você precisará ajustar esta URL.
+        const BACKEND_URL = 'http://127.0.0.1:5000';
+
+        // Adiciona um ouvinte de evento para o clique do botão
+        downloadButton.addEventListener('click', async () => {
+            const profileLink = tiktokLinkInput.value.trim();
+
+            if (!profileLink) {
+                displayMessage('Por favor, insira um link de perfil do TikTok.', 'error');
+                return;
+            }
+
+            if (!profileLink.startsWith('https://www.tiktok.com/@')) {
+                displayMessage('O link parece inválido. Por favor, use um link de perfil do TikTok válido (ex: https://www.tiktok.com/@nomedousuario).', 'error');
+                return;
+            }
+
+            displayMessage('Iniciando o processo de download... Por favor, aguarde.', 'info');
+            downloadButton.disabled = true;
+
+            try {
+                // Faz a requisição para o seu servidor backend usando a URL completa
+                const response = await fetch(`${BACKEND_URL}/api/download-tiktok-profile`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ link: profileLink })
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    displayMessage(data.message || 'Download iniciado com sucesso! Verifique seu servidor.', 'success');
+                } else {
+                    // Tenta exibir a mensagem de erro do backend, se disponível
+                    displayMessage(data.message || `Erro no download: ${response.statusText}`, 'error');
+                }
+            } catch (error) {
+                console.error('Erro ao chamar o backend:', error);
+                displayMessage('Erro de conexão com o servidor. Verifique se o backend está rodando e se a URL está correta.', 'error');
+            } finally {
+                downloadButton.disabled = false;
+            }
+        });
+
+        /**
+         * Exibe uma mensagem de status na interface.
+         * @param {string} message - A mensagem a ser exibida.
+         * @param {'info'|'success'|'error'} type - O tipo da mensagem para estilização.
+         */
+        function displayMessage(message, type) {
+            statusMessage.textContent = message;
+            statusMessage.classList.remove('hidden', 'bg-blue-100', 'border-blue-200', 'bg-green-100', 'border-green-200', 'bg-red-100', 'border-red-200');
+
+            if (type === 'info') {
+                statusMessage.classList.add('bg-blue-100', 'border-blue-200');
+            } else if (type === 'success') {
+                statusMessage.classList.add('bg-green-100', 'border-green-200');
+            } else if (type === 'error') {
+                statusMessage.classList.add('bg-red-100', 'border-red-200');
+            }
+            statusMessage.classList.remove('hidden');
+        }
+    </script>
+</body>
+</html>
